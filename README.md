@@ -8,7 +8,7 @@ And yes, I did make a fair use of AI while building this.
 This project aims to build a tool that computes a **Cognitive Enrichment Score (CES)** for a given song using its **YouTube link**. The goal is to provide a quantitative proxy for how cognitively engaging or enriching a piece of music may be, helping users make informed listening choices.
 
 ---
-
+Note: > ⚠️ FFmpeg is required for audio extraction. Make sure it is installed and added to PATH, or specify its location in the code.
 ## 🧠 What is Cognitive Enrichment Score (CES)?
 
 CES is a **computed proxy metric** that estimates how engaging a piece of audio is for the human brain, based on psychoacoustic principles.
