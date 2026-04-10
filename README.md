@@ -1,4 +1,7 @@
 # 🎧 Cognitive Enrichment Score (CES) Analyzer
+## Edited observation
+The current CES mainly captures signal complexity and energy, not true musical depth. As a result, structured and compositionally rich Carnatic pieces like Panchratna kritis may score lower than more acoustically dense recordings such as Suprabhatam. This highlights a gap between psychoacoustic features and actual musical sophistication.
+
 
 ## 📌 Overview
 

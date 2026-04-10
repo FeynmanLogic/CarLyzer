@@ -122,19 +122,20 @@ def extract_features(file):
 # 3. CES Proxy (baseline score)
 # ------------------------------
 def compute_ces_proxy(features):
-    spectral_entropy = features[-4]
-    pitch_var = features[-3]
-    tempo = features[-2]
-    harmonic_ratio = features[-1]
+    # Normalize manually (rough scaling)
+    spectral_entropy = features[0] / 10
+    pitch_var = features[1] / 500
+    harmonic_ratio = features[2]
+    tempo = features[3] / 200
 
     CES = (
         0.3 * spectral_entropy +
         0.3 * pitch_var +
         0.2 * harmonic_ratio +
-        0.2 * (tempo / 200.0)  # normalize tempo
+        0.2 * tempo
     )
 
-    return CES
+    return CES * 100 
 
 
 # ------------------------------
