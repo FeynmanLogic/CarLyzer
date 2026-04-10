@@ -15,14 +15,14 @@ import os
 # ------------------------------
 def download_audio(url, filename="audio.wav"):
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': 'temp.%(ext)s',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'wav',
-        }],
-        'quiet': True
-    }
+    'format': 'bestaudio/best',
+    'outtmpl': 'temp.%(ext)s',
+    'ffmpeg_location': r'C:\Users\USER\ffmpeg-2026-04-09-git-d3d0b7a5ee-full_build\bin', #replace this with the file location of the bin directory of the ffmpeg in ur system
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'wav',
+    }],
+}
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
@@ -33,38 +33,56 @@ def download_audio(url, filename="audio.wav"):
 # ------------------------------
 # 2. Feature Extraction
 # ------------------------------
+from tqdm import tqdm
+import librosa
+import numpy as np
+from scipy.stats import entropy
+
 def extract_features(file):
-    y, sr = librosa.load(file, sr=22050)
+    print("\nLoading audio (first 60 sec)...")
+    y, sr = librosa.load(file, sr=16000, duration=60) #change duration to whatever need be
 
-    # --- Spectral Entropy ---
-    S = np.abs(librosa.stft(y))
-    S_norm = S / (np.sum(S, axis=0, keepdims=True) + 1e-6)
-    spectral_entropy = np.mean([entropy(frame) for frame in S_norm.T])
+    results = []
 
-    # --- Pitch Variability ---
-    pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
-    pitch_vals = pitches[magnitudes > np.median(magnitudes)]
-    pitch_var = np.std(pitch_vals) if len(pitch_vals) > 0 else 0
+    steps = [
+        "Spectral Entropy",
+        "Pitch Variability (Centroid)",
+        "Harmonic Ratio",
+        "Tempo"
+    ]
 
-    # --- Tempo ---
-    tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+    for step in tqdm(steps, desc="Feature Extraction", ncols=80):
 
-    # --- Harmonic Ratio ---
-    y_harmonic, y_percussive = librosa.effects.hpss(y)
-    harmonic_ratio = np.sum(y_harmonic**2) / (np.sum(y**2) + 1e-6)
+        if step == "Spectral Entropy":
+            S = np.abs(librosa.stft(y, n_fft=1024))
+            S_norm = S / (np.sum(S, axis=0, keepdims=True) + 1e-6)
+            spectral_entropy = np.mean([entropy(frame) for frame in S_norm.T])
+            results.append(float(spectral_entropy))  # ✅ scalar
 
-    # --- Mel Spectrogram (compressed) ---
-    mel = librosa.feature.melspectrogram(y=y, sr=sr)
-    mel_db = librosa.power_to_db(mel)
-    mel_mean = np.mean(mel_db, axis=1)
+        elif step == "Pitch Variability (Centroid)":
+            centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
+            pitch_var = np.std(centroid)
+            results.append(float(pitch_var))  # ✅ scalar
 
-    features = np.concatenate([
-        mel_mean,
-        [spectral_entropy, pitch_var, tempo, harmonic_ratio]
-    ])
+        elif step == "Harmonic Ratio":
+            y_harmonic, _ = librosa.effects.hpss(y)
+            harmonic_ratio = np.sum(y_harmonic**2) / (np.sum(y**2) + 1e-6)
+            results.append(float(harmonic_ratio))  # ✅ scalar
+
+        elif step == "Tempo":
+            tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+            results.append(float(tempo))  # ✅ scalar
+
+    # ✅ Convert to clean numeric array
+    features = np.array(results, dtype=np.float32)
+
+    # 🧪 DEBUG CHECKS
+    print("\n--- DEBUG: Feature Vector ---")
+    print("Features:", features)
+    print("Shape:", features.shape)
+    print("Dtype:", features.dtype)
 
     return features
-
 
 # ------------------------------
 # 3. CES Proxy (baseline score)
@@ -125,8 +143,9 @@ def analyze_youtube(url):
     # Convert to tensor
     x = torch.tensor(features, dtype=torch.float32).unsqueeze(0)
 
-    # Forward pass (no training yet)
-    nn_score = model(x).item()
+    model.eval()  # 🔥 important fix
+    with torch.no_grad():
+     nn_score = model(x).item()
 
     final_score = 0.7 * ces_proxy + 0.3 * nn_score
 
@@ -139,7 +158,25 @@ def analyze_youtube(url):
         "NN_score": nn_score,
         "Final_score": final_score
     }
+import csv
+import os
 
+def save_to_dataset(features, ces, filename="dataset.csv"):
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, "a", newline="") as f:
+        writer = csv.writer(f)
+
+        if not file_exists:
+            writer.writerow([
+                "spectral_entropy",
+                "pitch_var",
+                "harmonic_ratio",
+                "tempo",
+                "ces"
+            ])
+
+        writer.writerow(list(features) + [ces])
 
 # ------------------------------
 # 6. Run
@@ -148,6 +185,7 @@ if __name__ == "__main__":
     url = input("Enter YouTube URL: ")
 
     results = analyze_youtube(url)
+    save_to_dataset(features, ces_proxy)
 
     print("\n==== Results ====")
     print(f"CES (proxy): {results['CES_proxy']:.4f}")
