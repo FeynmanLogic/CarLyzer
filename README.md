@@ -89,14 +89,13 @@ Final Score
 
 ## 📊 Methodology
 
-### 1. Feature Extraction
-
+### Feature extraction:
 Using `librosa`, we extract:
 
-* Mel spectrogram
-* Pitch information
-* Beat/tempo
-* Harmonic vs percussive components
+* Spectral Entropy → information richness of the signal  
+* Spectral Centroid Variability → proxy for pitch variation  
+* Harmonic Ratio → tonal vs noisy structure  
+* Tempo → rhythmic structure
 
 ### 2. CES Proxy
 
@@ -106,6 +105,8 @@ A weighted combination:
 * 30% Pitch Variability
 * 20% Harmonic Ratio
 * 20% Tempo (normalized)
+CES is computed on a short audio segment (typically first 30–60 seconds),
+based on the assumption that psychoacoustic characteristics stabilize over time.
 
 ### 3. Neural Network
 
