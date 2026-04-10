@@ -80,10 +80,19 @@ def extract_features(file):
 
         if step == "Spectral Entropy":
             S = np.abs(librosa.stft(y, n_fft=1024))
-            S_norm = S / (np.sum(S, axis=0, keepdims=True) + 1e-6)
-            spectral_entropy = np.mean([entropy(frame) for frame in S_norm.T])
-            results.append(float(spectral_entropy))  # ✅ scalar
+           # --- Spectral Entropy (FIXED) ---
+            S = np.abs(librosa.stft(y, n_fft=1024))
 
+# Avoid division by zero
+            S_sum = np.sum(S, axis=0, keepdims=True) + 1e-10
+            S_norm = S / S_sum
+
+# Avoid log(0)
+            S_norm = np.clip(S_norm, 1e-10, 1.0)
+
+            spectral_entropy = np.mean([-np.sum(frame * np.log(frame)) for frame in S_norm.T])
+            spectral_entropy = float(spectral_entropy)
+            results.append(float(spectral_entropy))
         elif step == "Pitch Variability (Centroid)":
             centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
             pitch_var = np.std(centroid)
@@ -212,8 +221,7 @@ if __name__ == "__main__":
     url = input("Enter YouTube URL: ")
 
     results = analyze_youtube(url)
-    save_to_dataset(features, ces_proxy)
-
+    
     print("\n==== Results ====")
     print(f"CES (proxy): {results['CES_proxy']:.4f}")
     print(f"NN score: {results['NN_score']:.4f}")
