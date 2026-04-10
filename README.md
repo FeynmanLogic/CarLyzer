@@ -3,10 +3,10 @@
 ## 📌 Overview
 
 Psychoacoustics is a multi-disciplinary field that combines **Digital Signal Processing (DSP)**, **Computer Science**, **Physics**, **Cognitive Science**, and **Biology** among others to see how the human ear reacts to sound.
-And yes, I did make a fair use of AI while building this.
+
 
 This project aims to build a tool that computes a **Cognitive Enrichment Score (CES)** for a given song using its **YouTube link**. The goal is to provide a quantitative proxy for how cognitively engaging or enriching a piece of music may be, helping users make informed listening choices.
-
+Acknoledgement: AI was used as a tool in different sections of the pipeline.
 ---
 Note: > ⚠️ FFmpeg is required for audio extraction. Make sure it is installed and added to PATH, or specify its location in the code.
 ## 🧠 What is Cognitive Enrichment Score (CES)?
