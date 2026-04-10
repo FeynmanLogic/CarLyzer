@@ -25,7 +25,7 @@ def download_audio(url, filename="audio.wav"):
     'quiet': True
 }
 
-     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
 
     title = info.get("title", "unknown")
