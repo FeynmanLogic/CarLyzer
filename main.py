@@ -22,13 +22,38 @@ def download_audio(url, filename="audio.wav"):
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'wav',
     }],
+    'quiet': True
 }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
 
-    return "temp.wav"
+    title = info.get("title", "unknown")
 
+    return "temp.wav", title
+import csv
+import os
+
+def log_results(title, ces, nn_score, final_score, filename="results.csv"):
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+
+        if not file_exists:
+            writer.writerow([
+                "title",
+                "ces_proxy",
+                "nn_score",
+                "final_score"
+            ])
+
+        writer.writerow([
+            title,
+            round(ces, 4),
+            round(nn_score, 4),
+            round(final_score, 4)
+        ])
 
 # ------------------------------
 # 2. Feature Extraction
@@ -129,7 +154,8 @@ class CESModel(nn.Module):
 # ------------------------------
 def analyze_youtube(url):
     print("\nDownloading audio...")
-    file = download_audio(url)
+    file, title = download_audio(url)
+    print(f"\n🎵 Song: {title}")
 
     print("Extracting features...")
     features = extract_features(file)
@@ -152,6 +178,7 @@ def analyze_youtube(url):
     # Cleanup
     if os.path.exists(file):
         os.remove(file)
+    log_results(title, ces_proxy, nn_score, final_score)
 
     return {
         "CES_proxy": ces_proxy,
